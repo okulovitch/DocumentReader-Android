@@ -14,12 +14,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.regula.documentreader.api.enums.eGraphicFieldType;
-import com.regula.documentreader.api.enums.eRPRM_Authenticity;
 import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 import com.regula.documentreader.api.results.DocumentReaderTextField;
-import com.regula.documentreader.api.results.authenticity.DocumentReaderAuthenticityCheckResult;
-import com.regula.documentreader.api.results.authenticity.DocumentReaderIdentResult;
+import com.regula.facesdk.results.MatchFacesResponse;
+import com.regula.facesdk.results.MatchedFacesPair;
+import com.regula.facesdk.structs.Image;
+import com.regula.facesdk.structs.MatchFacesRequest;
 
 public class FragmentResults extends Fragment {
 
@@ -34,14 +35,22 @@ public class FragmentResults extends Fragment {
     private LinearLayout authResults;
 
     private DocumentReaderResults results;
+    private MatchFacesRequest request;
+    private MatchFacesResponse response;
 
     private static FragmentResults instance;
 
     static FragmentResults getInstance(DocumentReaderResults results){
+        return getInstance(results, null, null);
+    }
+
+    static FragmentResults getInstance(DocumentReaderResults results, MatchFacesRequest request, MatchFacesResponse response){
         if(instance==null){
             instance = new FragmentResults();
         }
         instance.results = results;
+        instance.request = request;
+        instance.response = response;
 
         return instance;
     }
@@ -93,27 +102,18 @@ public class FragmentResults extends Fragment {
                 }
             }
 
-            if(results.authenticityCheckList!=null){
-                authResults.setVisibility(View.VISIBLE);
-                for (int i=0; i<results.authenticityCheckList.list.size(); i++) {
-                    DocumentReaderAuthenticityCheckResult documentReaderAuthenticityCheckResult = results.authenticityCheckList.list.get(i);
-                    if(documentReaderAuthenticityCheckResult.type == eRPRM_Authenticity.PORTRAIT_COMPARISON) {
-                        Log.d("PORTRAIT_COMPARISON", "Overall result: " + documentReaderAuthenticityCheckResult.result);
-                        Log.d("PORTRAIT_COMPARISON", "Comparison pairs: " + documentReaderAuthenticityCheckResult.list.size());
-                        for( int k=0; k<documentReaderAuthenticityCheckResult.list.size(); k++){
-                            DocumentReaderIdentResult authenticityResult =
-                                    (DocumentReaderIdentResult) documentReaderAuthenticityCheckResult.list.get(k);
-                            Log.d("PORTRAIT_COMPARISON", "Pair "+k+ " element type: " + authenticityResult.elementType);
-                            Log.d("PORTRAIT_COMPARISON", "Pair "+k+ " comparison value %: " + authenticityResult.percentValue);
-                            Log.d("PORTRAIT_COMPARISON", "Pair "+k+ " element result: " + authenticityResult.elementResult);
+            if(response!=null && response.matchedFaces!=null && response.matchedFaces.size()>0){
+                MatchedFacesPair pair = response.matchedFaces.get(0);
+                comparisonTv.setText("Value: " + (int)(pair.similarity * 100) + "%" );
 
-                            comparisonTv.setText("Value: " +authenticityResult.percentValue + "%" );
-
-                            etalonIv.setImageBitmap(authenticityResult.etalonImage.getBitmap());
-                            realIv.setImageBitmap(authenticityResult.image.getBitmap());
-                        }
+                for(Image img : request.images){
+                    if(img.id == MainActivity.CAPTURED_FACE){
+                        realIv.setImageBitmap(img.image());
+                    } else if(img.id == MainActivity.DOCUMENT_FACE){
+                        etalonIv.setImageBitmap(img.image());
                     }
                 }
+
             } else {
                 authResults.setVisibility(View.INVISIBLE);
             }
@@ -123,7 +123,7 @@ public class FragmentResults extends Fragment {
                 portraitIv.setImageBitmap(portrait);
             }
 
-            Bitmap documentImage = results.getGraphicFieldImageByType(eGraphicFieldType.GT_DOCUMENT_FRONT);
+            Bitmap documentImage = results.getGraphicFieldImageByType(eGraphicFieldType.GF_DOCUMENT_IMAGE);
             if(documentImage!=null){
                 double aspectRatio = (double) documentImage.getWidth() / (double) documentImage.getHeight();
                 documentImage = Bitmap.createScaledBitmap(documentImage, (int)(480 * aspectRatio), 480, false);

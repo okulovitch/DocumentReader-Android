@@ -19,8 +19,15 @@ import com.regula.documentreader.api.DocumentReader;
 import com.regula.documentreader.api.enums.DocReaderAction;
 import com.regula.documentreader.api.enums.eGraphicFieldType;
 import com.regula.documentreader.api.enums.eRFID_Password_Type;
+import com.regula.documentreader.api.enums.eRFID_ResultType;
 import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.results.DocumentReaderResults;
+import com.regula.facesdk.FaceReaderService;
+import com.regula.facesdk.results.MatchFacesResponse;
+import com.regula.facesdk.results.infrastructure.FaceCaptureCallback;
+import com.regula.facesdk.results.infrastructure.MatchFaceCallback;
+import com.regula.facesdk.structs.Image;
+import com.regula.facesdk.structs.MatchFacesRequest;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -34,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     static final String MY_SHARED_PREFS = "MySharedPrefs";
     static final String DO_RFID = "doRfid";
     static final String RESULTS_TAG = "resultsFragment";
+
+    static final int CAPTURED_FACE = 1;
+    static final int DOCUMENT_FACE = 2;
 
     static SharedPreferences sharedPreferences;
 
@@ -145,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
     //DocumentReader processing callback
     private DocumentReader.DocumentReaderCompletion completion = new DocumentReader.DocumentReaderCompletion() {
         @Override
-        public void onCompleted(int action, DocumentReaderResults results, String error) {
+        public void onCompleted(int action, final DocumentReaderResults results, String error) {
             //processing is finished, all results are ready
             if (action == DocReaderAction.COMPLETE) {
                 if(loadingDialog!=null && loadingDialog.isShowing()){
@@ -171,30 +181,25 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onCompleted(int rfidAction, final DocumentReaderResults results, String error) {
                             if (rfidAction == DocReaderAction.COMPLETE) {
-                                if( /*verifyFace &&*/ results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT)!=null) {
-                                    DocumentReader.Instance().startFaceVerification(new DocumentReader.DocumentReaderCompletion() {
-                                        @Override
-                                        public void onCompleted(int i, DocumentReaderResults documentReaderResults, String s) {
-                                            if (i == DocReaderAction.COMPLETE || i == DocReaderAction.CANCEL) {
-                                                resultsFragment = FragmentResults.getInstance(results);
-                                                fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
-                                            }
-                                        }
-                                    });
+                                final Bitmap rfidPortrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT,
+                                        eRFID_ResultType.RFID_RESULT_TYPE_RFID_IMAGE_DATA);
+                                if( rfidPortrait!=null ) {
+                                    matchFace(results, rfidPortrait);
+                                } else {
+                                    resultsFragment = FragmentResults.getInstance(results);
+                                    fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
                                 }
                             }
                         }
                     });
-                } else if( results !=null && /*verifyFace &&*/ results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT)!=null) {
-                    DocumentReader.Instance().startFaceVerification(new DocumentReader.DocumentReaderCompletion() {
-                        @Override
-                        public void onCompleted(int i, DocumentReaderResults documentReaderResults, String s) {
-                            if (i == DocReaderAction.COMPLETE || i == DocReaderAction.CANCEL) {
-                                resultsFragment = FragmentResults.getInstance(documentReaderResults);
-                                fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
-                            }
-                        }
-                    });
+                } else if( results !=null) {
+                    final Bitmap portrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT);
+                    if(portrait!=null) {
+                        matchFace(results, portrait);
+                    } else {
+                        resultsFragment = FragmentResults.getInstance(results);
+                        fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
+                    }
                 } else {
                     resultsFragment = FragmentResults.getInstance(results);
                     fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
@@ -209,6 +214,41 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    private void matchFace(final DocumentReaderResults results, final Bitmap rfidPortrait) {
+        FaceReaderService.Instance().initFaceReaderService(MainActivity.this.getApplicationContext());
+        FaceReaderService.Instance().getFaceFromCamera(new FaceCaptureCallback() {
+            @Override
+            public void onFaceCaptured(int action, final Image capturedFace, String s) {
+                if (capturedFace != null) {
+                    final MatchFacesRequest request = new MatchFacesRequest();
+                    request.similarityThreshold = 0;
+
+                    Image img = new Image();
+                    img.id = CAPTURED_FACE;
+                    img.tag = ".jpg";
+                    img.setImage(capturedFace.image());
+                    request.images.add(img);
+
+                    Image port = new Image();
+                    port.id = DOCUMENT_FACE;
+                    port.tag = ".jpg";
+                    port.setImage(rfidPortrait);
+                    request.images.add(port);
+
+                    FaceReaderService.Instance().matchFaces(request, new MatchFaceCallback() {
+                        @Override
+                        public void onFaceMatched(int i, MatchFacesResponse matchFacesResponse, String s) {
+                            resultsFragment = FragmentResults.getInstance(results, request, matchFacesResponse);
+                            fragmentManager.beginTransaction()
+                                    .replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx")
+                                    .commitAllowingStateLoss();
+                        }
+                    });
+                }
+            }
+        });
+    }
 
     private AlertDialog showDialog(String msg) {
         AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
