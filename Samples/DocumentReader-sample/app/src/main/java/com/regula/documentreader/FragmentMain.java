@@ -113,7 +113,7 @@ public class FragmentMain extends Fragment {
 
     void prepareDatabase(Context context, final DocumentReader.DocumentReaderPrepareCompletion completion){
         //preparing database files, it will be downloaded from network only one time and stored on user device
-        DocumentReader.Instance().prepareDatabase(context, "Full", new
+        DocumentReader.Instance().prepareDatabase(context, "FullAuth", new
                 DocumentReader.DocumentReaderPrepareCompletion() {
 
                     @Override
