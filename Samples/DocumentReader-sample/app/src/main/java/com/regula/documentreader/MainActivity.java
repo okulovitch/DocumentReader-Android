@@ -40,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 22;
     static final String MY_SHARED_PREFS = "MySharedPrefs";
     static final String DO_RFID = "doRfid";
+    static final String USE_AUTHENTICATOR = "useAuthenticator";
+    static final String COMPARE_FACES = "compareFaces";
     static final String RESULTS_TAG = "resultsFragment";
 
     static final int CAPTURED_FACE = 1;
@@ -52,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
     private FragmentManager fragmentManager;
     private FragmentMain mainFragment;
     private FragmentResults resultsFragment;
+
+    private AlertDialog compareFacesDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -180,10 +184,13 @@ public class MainActivity extends AppCompatActivity {
                     DocumentReader.Instance().startRFIDReader(new DocumentReader.DocumentReaderCompletion() {
                         @Override
                         public void onCompleted(int rfidAction, final DocumentReaderResults results, String error) {
-                            if (rfidAction == DocReaderAction.COMPLETE) {
+                            if (results == null)
+                                return;
+
+                            if (rfidAction == DocReaderAction.COMPLETE || rfidAction == DocReaderAction.CANCEL) {
                                 final Bitmap rfidPortrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT,
                                         eRFID_ResultType.RFID_RESULT_TYPE_RFID_IMAGE_DATA);
-                                if( rfidPortrait!=null ) {
+                                if( rfidPortrait!=null && mainFragment.isCompareFaces()) {
                                     matchFace(results, rfidPortrait);
                                 } else {
                                     resultsFragment = FragmentResults.getInstance(results);
@@ -194,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
                     });
                 } else if( results !=null) {
                     final Bitmap portrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT);
-                    if(portrait!=null) {
+                    if(portrait!=null && mainFragment.isCompareFaces()) {
                         matchFace(results, portrait);
                     } else {
                         resultsFragment = FragmentResults.getInstance(results);
@@ -236,15 +243,26 @@ public class MainActivity extends AppCompatActivity {
                     port.setImage(rfidPortrait);
                     request.images.add(port);
 
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            compareFacesDialog = showDialog("Compare faces...");
+                        }
+                    });
                     FaceReaderService.Instance().matchFaces(request, new MatchFaceCallback() {
                         @Override
                         public void onFaceMatched(int i, MatchFacesResponse matchFacesResponse, String s) {
+                            compareFacesDialog.dismiss();
+                            compareFacesDialog = null;
                             resultsFragment = FragmentResults.getInstance(results, request, matchFacesResponse);
                             fragmentManager.beginTransaction()
                                     .replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx")
                                     .commitAllowingStateLoss();
                         }
                     });
+                } else {
+                    resultsFragment = FragmentResults.getInstance(results);
+                    fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
                 }
             }
         });

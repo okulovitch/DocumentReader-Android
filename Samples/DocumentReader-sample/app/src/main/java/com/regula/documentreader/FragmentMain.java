@@ -29,21 +29,27 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.regula.documentreader.MainActivity.COMPARE_FACES;
 import static com.regula.documentreader.MainActivity.DO_RFID;
 import static com.regula.documentreader.MainActivity.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE;
 import static com.regula.documentreader.MainActivity.REQUEST_BROWSE_PICTURE;
+import static com.regula.documentreader.MainActivity.USE_AUTHENTICATOR;
 import static com.regula.documentreader.MainActivity.sharedPreferences;
 
 public class FragmentMain extends Fragment {
 
     private int selectedPosition;
 
+    private boolean useAuthenticator;
     private boolean doRfid;
+    private boolean compareFaces;
 
     private TextView showScanner;
     private TextView recognizeImage;
 
+    private CheckBox authenticatorCb;
     private CheckBox doRfidCb;
+    private CheckBox compareFacesCb;
 
     private ListView scenarioLv;
 
@@ -91,7 +97,9 @@ public class FragmentMain extends Fragment {
 
         scenarioLv = view.findViewById(R.id.scenariosList);
 
+        authenticatorCb = view.findViewById(R.id.authenticatorCb);
         doRfidCb = view.findViewById(R.id.doRfidCb);
+        compareFacesCb = view.findViewById(R.id.compareFacesCb);
     }
 
     @Override
@@ -179,6 +187,24 @@ public class FragmentMain extends Fragment {
             }
         });
 
+        DocumentReader.Instance().functionality().setBtDeviceName("Regula 0122"); // set up name of the 1120 device
+
+        if (DocumentReader.Instance().getCanUseAuthenticator()) {
+            useAuthenticator = sharedPreferences.getBoolean(USE_AUTHENTICATOR, false);
+            authenticatorCb.setChecked(useAuthenticator);
+            DocumentReader.Instance().functionality().setUseAuthenticator(useAuthenticator);
+            authenticatorCb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    DocumentReader.Instance().functionality().setUseAuthenticator(isChecked);
+                    useAuthenticator = isChecked;
+                    sharedPreferences.edit().putBoolean(USE_AUTHENTICATOR, useAuthenticator).apply();
+                }
+            });
+        } else {
+            authenticatorCb.setVisibility(View.GONE);
+        }
+
         if (DocumentReader.Instance().getCanRFID()) {
             //reading shared preferences
             doRfid = sharedPreferences.getBoolean(DO_RFID, false);
@@ -193,6 +219,16 @@ public class FragmentMain extends Fragment {
         } else {
             doRfidCb.setVisibility(View.GONE);
         }
+
+        compareFaces = sharedPreferences.getBoolean(COMPARE_FACES, false);
+        compareFacesCb.setChecked(compareFaces);
+        compareFacesCb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                compareFaces = isChecked;
+                sharedPreferences.edit().putBoolean(COMPARE_FACES, isChecked).apply();
+            }
+        });
 
         //getting current processing scenario and loading available scenarios to ListView
         String currentScenario = DocumentReader.Instance().processParams().scenario;
@@ -259,5 +295,9 @@ public class FragmentMain extends Fragment {
             }
             return view;
         }
+    }
+
+    public boolean isCompareFaces() {
+        return compareFaces;
     }
 }
