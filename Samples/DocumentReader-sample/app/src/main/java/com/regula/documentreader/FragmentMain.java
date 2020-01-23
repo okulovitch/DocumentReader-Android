@@ -187,7 +187,7 @@ public class FragmentMain extends Fragment {
             }
         });
 
-        DocumentReader.Instance().functionality().setBtDeviceName("Regula 0122"); // set up name of the 1120 device
+        DocumentReader.Instance().functionality().setBtDeviceName("Regula 0000"); // set up name of the 1120 device
 
         if (DocumentReader.Instance().getCanUseAuthenticator()) {
             useAuthenticator = sharedPreferences.getBoolean(USE_AUTHENTICATOR, false);
