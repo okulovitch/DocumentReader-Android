@@ -39,11 +39,11 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    implementation 'com.regula.documentreader.fullrfid:core:5.0.1237@aar'
-    implementation('com.regula.documentreader:api:5.0.801@aar') {
+    implementation 'com.regula.documentreader.fullrfid:core:5.1.1922@aar'
+    implementation('com.regula.documentreader:api:5.1.1357@aar') {
         transitive = true;
     }
-    implementation('com.regula.documentreader:facesdk:5.0.50@aar'){
+    implementation('com.regula.documentreader:facesdk:5.1.101@aar'){
         transitive = true;
     }
 }
