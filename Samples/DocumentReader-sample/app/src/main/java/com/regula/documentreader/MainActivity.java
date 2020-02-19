@@ -69,6 +69,10 @@ public class MainActivity extends AppCompatActivity {
 
     private int selectedPosition;
 
+    private static int RFID_RESULT = 100;
+
+    public static DocumentReaderResults documentReaderResults;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -239,9 +243,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (resultCode == RESULT_OK) {
+        if (requestCode == RFID_RESULT) {
+            // check resultCode
+            if (documentReaderResults != null)
+                displayResults(documentReaderResults);
+        } else {
             //Image browsing intent processed successfully
-            if (requestCode == REQUEST_BROWSE_PICTURE){
+            if (requestCode == REQUEST_BROWSE_PICTURE && resultCode == RESULT_OK){
                 if (data.getData() != null) {
                     Uri selectedImage = data.getData();
                     Bitmap bmp = getBitmap(selectedImage, 1920, 1080);
@@ -295,15 +303,11 @@ public class MainActivity extends AppCompatActivity {
                         DocumentReader.Instance().rfidScenario().setPacePasswordType(eRFID_Password_Type.PPT_CAN);
                     }
 
+                    documentReaderResults = results;
+
                     //starting chip reading
-                    DocumentReader.Instance().startRFIDReader(new DocumentReader.DocumentReaderCompletion() {
-                        @Override
-                        public void onCompleted(int rfidAction, DocumentReaderResults results, String error) {
-                            if (rfidAction == DocReaderAction.COMPLETE || rfidAction == DocReaderAction.CANCEL) {
-                                displayResults(results);
-                            }
-                        }
-                    });
+                    Intent rfidIntent = new Intent(MainActivity.this, CustomRfidActivity.class);
+                    startActivityForResult(rfidIntent, RFID_RESULT);
                 } else {
                     displayResults(results);
                 }
@@ -358,6 +362,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clearResults(){
+        documentReaderResults = null;
         nameTv.setText("");
         portraitIv.setImageResource(R.drawable.portrait);
         docImageIv.setImageResource(R.drawable.id);
