@@ -146,7 +146,7 @@ public class FragmentResults extends Fragment {
                 authenticityResultImg.setImageResource(results.authenticityResult.getStatus() == eCheckResult.CH_CHECK_OK ? R.drawable.correct : R.drawable.incorrect);
 
                 for (DocumentReaderAuthenticityCheck check : results.authenticityResult.checks) {
-                    Log.d("MainActivity", "check type: " + check.getTypeName() + ", status: " + check.status);
+                    Log.d("MainActivity", "check type: " + check.getTypeName(getContext()) + ", status: " + check.status);
                     // type here: eRPRM_Authenticity
                     for (DocumentReaderAuthenticityElement element : check.elements) {
                         Log.d("MainActivity", "Element type: " + element.elementType + ", status: " + element.status);

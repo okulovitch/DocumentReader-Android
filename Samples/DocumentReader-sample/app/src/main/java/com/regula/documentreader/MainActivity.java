@@ -23,6 +23,7 @@ import com.regula.documentreader.api.enums.eRFID_ResultType;
 import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 import com.regula.facesdk.FaceReaderService;
+import com.regula.facesdk.enums.eInputFaceType;
 import com.regula.facesdk.results.MatchFacesResponse;
 import com.regula.facesdk.results.infrastructure.FaceCaptureCallback;
 import com.regula.facesdk.results.infrastructure.MatchFaceCallback;
@@ -191,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
                                 final Bitmap rfidPortrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT,
                                         eRFID_ResultType.RFID_RESULT_TYPE_RFID_IMAGE_DATA);
                                 if( rfidPortrait!=null && mainFragment.isCompareFaces()) {
-                                    matchFace(results, rfidPortrait);
+                                    matchFace(results, rfidPortrait, eInputFaceType.ift_DocumentRFID);
                                 } else {
                                     resultsFragment = FragmentResults.getInstance(results);
                                     fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
@@ -202,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
                 } else if( results !=null) {
                     final Bitmap portrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT);
                     if(portrait!=null && mainFragment.isCompareFaces()) {
-                        matchFace(results, portrait);
+                        matchFace(results, portrait, eInputFaceType.ift_DocumentPrinted);
                     } else {
                         resultsFragment = FragmentResults.getInstance(results);
                         fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
@@ -222,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void matchFace(final DocumentReaderResults results, final Bitmap rfidPortrait) {
+    private void matchFace(final DocumentReaderResults results, final Bitmap rfidPortrait, final int imgType) {
         FaceReaderService.Instance().initFaceReaderService(MainActivity.this.getApplicationContext());
         FaceReaderService.Instance().getFaceFromCamera(new FaceCaptureCallback() {
             @Override
@@ -234,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
                     Image img = new Image();
                     img.id = CAPTURED_FACE;
                     img.tag = ".jpg";
+                    img.imageType = eInputFaceType.ift_Live;
                     img.setImage(capturedFace.image());
                     request.images.add(img);
 
@@ -241,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
                     port.id = DOCUMENT_FACE;
                     port.tag = ".jpg";
                     port.setImage(rfidPortrait);
+                    port.imageType = imgType;
                     request.images.add(port);
 
                     runOnUiThread(new Runnable() {
