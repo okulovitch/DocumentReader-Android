@@ -16,10 +16,13 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.regula.documentreader.api.DocumentReader;
+import com.regula.documentreader.api.completions.IDocumentReaderCompletion;
+import com.regula.documentreader.api.completions.IDocumentReaderInitCompletion;
+import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion;
 import com.regula.documentreader.api.enums.DocReaderAction;
 import com.regula.documentreader.api.enums.eGraphicFieldType;
 import com.regula.documentreader.api.enums.eRFID_Password_Type;
-import com.regula.documentreader.api.enums.eRFID_ResultType;
+import com.regula.documentreader.api.enums.eRPRM_ResultType;
 import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 import com.regula.facesdk.FaceReaderService;
@@ -72,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
 //        if(!DocumentReader.Instance().getDocumentReaderIsReady()) {
             final AlertDialog initDialog = showDialog("Initializing");
 
-            mainFragment.prepareDatabase(MainActivity.this, new DocumentReader.DocumentReaderPrepareCompletion() {
+            mainFragment.prepareDatabase(MainActivity.this, new IDocumentReaderPrepareCompletion() {
                 @Override
                 public void onPrepareProgressChanged(int i) {
                     initDialog.setTitle("Downloading database: " + i + "%");
@@ -80,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onPrepareCompleted(boolean b, String s) {
-                    mainFragment.init(MainActivity.this, new DocumentReader.DocumentReaderInitCompletion() {
+                    mainFragment.init(MainActivity.this, new IDocumentReaderInitCompletion() {
                         @Override
                         public void onInitCompleted(boolean b, String s) {
                             if (initDialog.isShowing()) {
@@ -153,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //DocumentReader processing callback
-    private DocumentReader.DocumentReaderCompletion completion = new DocumentReader.DocumentReaderCompletion() {
+    private IDocumentReaderCompletion completion = new IDocumentReaderCompletion() {
         @Override
         public void onCompleted(int action, final DocumentReaderResults results, String error) {
             //processing is finished, all results are ready
@@ -177,12 +180,12 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     //starting chip reading
-                    DocumentReader.Instance().startRFIDReader(new DocumentReader.DocumentReaderCompletion() {
+                    DocumentReader.Instance().startRFIDReader(MainActivity.this, new IDocumentReaderCompletion() {
                         @Override
                         public void onCompleted(int rfidAction, final DocumentReaderResults results, String error) {
                             if (rfidAction == DocReaderAction.COMPLETE) {
                                 final Bitmap rfidPortrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT,
-                                        eRFID_ResultType.RFID_RESULT_TYPE_RFID_IMAGE_DATA);
+                                        eRPRM_ResultType.RFID_RESULT_TYPE_RFID_IMAGE_DATA);
                                 if( rfidPortrait!=null ) {
                                     matchFace(results, rfidPortrait);
                                 } else {
@@ -216,8 +219,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private void matchFace(final DocumentReaderResults results, final Bitmap rfidPortrait) {
-        FaceReaderService.Instance().initFaceReaderService(MainActivity.this.getApplicationContext());
-        FaceReaderService.Instance().getFaceFromCamera(new FaceCaptureCallback() {
+        FaceReaderService.Instance().getFaceFromCamera(MainActivity.this, new FaceCaptureCallback() {
             @Override
             public void onFaceCaptured(int action, final Image capturedFace, String s) {
                 if (capturedFace != null) {
