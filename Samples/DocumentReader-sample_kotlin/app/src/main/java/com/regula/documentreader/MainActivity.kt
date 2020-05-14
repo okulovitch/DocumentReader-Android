@@ -21,6 +21,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import com.regula.documentreader.api.DocumentReader
+import com.regula.documentreader.api.completions.IDocumentReaderCompletion
+import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion
 import com.regula.documentreader.api.enums.DocReaderAction
 import com.regula.documentreader.api.enums.eGraphicFieldType
 import com.regula.documentreader.api.enums.eRFID_Password_Type
@@ -53,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 
     //DocumentReader processing callback
     private val completion =
-        DocumentReader.DocumentReaderCompletion { action, results, error ->
+        IDocumentReaderCompletion { action, results, error ->
             //processing is finished, all results are ready
             if (action == DocReaderAction.COMPLETE) {
                 if (loadingDialog != null && loadingDialog!!.isShowing) {
@@ -62,33 +64,29 @@ class MainActivity : AppCompatActivity() {
 
                 //Checking, if nfc chip reading should be performed
                 if (doRfid && results != null && results.chipPage != 0) {
-                    if (DocumentReader.Instance().processParams.rfidScenario == null) {
-                        DocumentReader.Instance().processParams.rfidScenario = RfidScenario()
-                    }
-
                     //setting the chip's access key - mrz on car access number
                     var accessKey: String?
                     accessKey = results.getTextFieldValueByType(eVisualFieldType.FT_MRZ_STRINGS)
                     if (accessKey != null && !accessKey.isEmpty()) {
                         accessKey = results.getTextFieldValueByType(eVisualFieldType.FT_MRZ_STRINGS)
                             .replace("^", "").replace("\n", "")
-                        DocumentReader.Instance().processParams.rfidScenario.mrz = accessKey
-                        DocumentReader.Instance().processParams.rfidScenario.pacePasswordType =
-                            eRFID_Password_Type.PPT_MRZ
+                        DocumentReader.Instance().rfidScenario().setMrz(accessKey)
+                        DocumentReader.Instance().rfidScenario().setPacePasswordType(
+                            eRFID_Password_Type.PPT_MRZ)
                     } else {
                         accessKey = results.getTextFieldValueByType(eVisualFieldType.FT_CARD_ACCESS_NUMBER)
                         if (accessKey != null && !accessKey.isEmpty()) {
-                            DocumentReader.Instance().processParams.rfidScenario.password = accessKey
-                            DocumentReader.Instance().processParams.rfidScenario.pacePasswordType =
-                                eRFID_Password_Type.PPT_CAN
+                            DocumentReader.Instance().rfidScenario().setPassword(accessKey)
+                            DocumentReader.Instance().rfidScenario().setPacePasswordType(
+                                eRFID_Password_Type.PPT_CAN)
                         }
                     }
                     //starting chip reading
-                    DocumentReader.Instance().startRFIDReader { rfidAction, results_RFIDReader, _ ->
+                    DocumentReader.Instance().startRFIDReader(this@MainActivity,{ rfidAction, results_RFIDReader, _ ->
                         if (rfidAction == DocReaderAction.COMPLETE) {
                             displayResults(results_RFIDReader)
                         }
-                    }
+                    })
                 } else {
                     displayResults(results)
                 }
@@ -138,7 +136,7 @@ class MainActivity : AppCompatActivity() {
                 DocumentReader.Instance().prepareDatabase(
                     this@MainActivity,
                     "Full",
-                    object : DocumentReader.DocumentReaderPrepareCompletion {
+                    object : IDocumentReaderPrepareCompletion {
                         override fun onPrepareProgressChanged(progress: Int) {
                             initDialog.setTitle("Downloading database: $progress%")
                         }
@@ -153,9 +151,10 @@ class MainActivity : AppCompatActivity() {
                                     initDialog.dismiss()
                                 }
 
-                                DocumentReader.Instance().customization.showResultStatusMessages = true
-                                DocumentReader.Instance().customization.showStatusMessages = true
-                                DocumentReader.Instance().functionality.videoCaptureMotionControl = true
+                                DocumentReader.Instance().customization().edit()
+                                    .setShowResultStatusMessages(true)
+                                    .setShowStatusMessages(true).apply()
+                                DocumentReader.Instance().functionality().isVideoCaptureMotionControl = true
 
                                 //initialization successful
                                 if (success) {
@@ -163,7 +162,7 @@ class MainActivity : AppCompatActivity() {
                                         clearResults()
 
                                         //starting video processing
-                                        DocumentReader.Instance().showScanner(completion)
+                                        DocumentReader.Instance().showScanner(this@MainActivity, completion)
                                     }
 
                                     recognizeImage!!.setOnClickListener {
@@ -199,7 +198,7 @@ class MainActivity : AppCompatActivity() {
                                     }
 
                                     //getting current processing scenario and loading available scenarios to ListView
-                                    var currentScenario: String? = DocumentReader.Instance().processParams.scenario
+                                    var currentScenario: String? = DocumentReader.Instance().processParams().scenario
                                     val scenarios = ArrayList<String>()
                                     for (scenario in DocumentReader.Instance().availableScenarios) {
                                         scenarios.add(scenario.name)
@@ -208,7 +207,7 @@ class MainActivity : AppCompatActivity() {
                                     //setting default scenario
                                     if (currentScenario == null || currentScenario.isEmpty()) {
                                         currentScenario = scenarios[0]
-                                        DocumentReader.Instance().processParams.scenario = currentScenario
+                                        DocumentReader.Instance().processParams().scenario = currentScenario
                                     }
 
                                     val adapter = ScenarioAdapter(
@@ -230,7 +229,7 @@ class MainActivity : AppCompatActivity() {
                                     scenarioLv!!.onItemClickListener =
                                         AdapterView.OnItemClickListener { _, _, i, _ ->
                                             //setting selected scenario to DocumentReader params
-                                            DocumentReader.Instance().processParams.scenario = adapter.getItem(i)
+                                            DocumentReader.Instance().processParams().scenario = adapter.getItem(i)
                                             selectedPosition = i
                                             adapter.notifyDataSetChanged()
                                         }
@@ -277,7 +276,9 @@ class MainActivity : AppCompatActivity() {
 
                     loadingDialog = showDialog("Processing image")
 
-                    DocumentReader.Instance().recognizeImage(bmp, completion)
+                    if (bmp != null) {
+                        DocumentReader.Instance().recognizeImage( bmp, completion)
+                    }
                 }
             }
         }
@@ -315,9 +316,10 @@ class MainActivity : AppCompatActivity() {
                 nameTv!!.text = name
             }
 
+            val txtResult = results.textResult
             // through all text fields
-            if (results.textResult != null && results.textResult.fields != null) {
-                for (textField in results.textResult.fields) {
+            if ( txtResult!= null && txtResult.fields != null) {
+                for (textField in txtResult.fields) {
                     val value = results.getTextFieldValueByType(textField.fieldType, textField.lcid)
                     Log.d("MainActivity", value + "\n")
                 }
@@ -328,7 +330,7 @@ class MainActivity : AppCompatActivity() {
                 portraitIv!!.setImageBitmap(portrait)
             }
 
-            var documentImage: Bitmap? = results.getGraphicFieldImageByType(eGraphicFieldType.GT_DOCUMENT_FRONT)
+            var documentImage: Bitmap? = results.getGraphicFieldImageByType(eGraphicFieldType.GF_DOCUMENT_IMAGE)
             if (documentImage != null) {
                 val aspectRatio = documentImage.width.toDouble() / documentImage.height.toDouble()
                 documentImage = Bitmap.createScaledBitmap(documentImage, (480 * aspectRatio).toInt(), 480, false)
