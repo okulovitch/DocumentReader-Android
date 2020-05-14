@@ -17,7 +17,7 @@ android {
     }
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.regula.documentreader"
+        applicationId "com.regula.dr.fullauthrfid"
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 1
@@ -44,6 +44,9 @@ dependencies {
 
     implementation 'com.regula.documentreader.fullrfid:core:5.1.2510@aar'
     implementation('com.regula.documentreader:api:5.1.2099@aar') {
+        transitive = true;
+    }
+    implementation('com.regula.documentreader:facesdk:5.1.189@aar'){
         transitive = true;
     }
 }
