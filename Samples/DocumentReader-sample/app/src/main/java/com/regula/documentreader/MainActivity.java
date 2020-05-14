@@ -26,6 +26,7 @@ import com.regula.documentreader.api.enums.eRPRM_ResultType;
 import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 import com.regula.facesdk.FaceReaderService;
+import com.regula.facesdk.enums.eInputFaceType;
 import com.regula.facesdk.results.MatchFacesResponse;
 import com.regula.facesdk.results.infrastructure.FaceCaptureCallback;
 import com.regula.facesdk.results.infrastructure.MatchFaceCallback;
@@ -218,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void matchFace(final DocumentReaderResults results, final Bitmap rfidPortrait) {
+    private void matchFace(final DocumentReaderResults results, final Bitmap portrait) {
         FaceReaderService.Instance().getFaceFromCamera(MainActivity.this, new FaceCaptureCallback() {
             @Override
             public void onFaceCaptured(int action, final Image capturedFace, String s) {
@@ -229,13 +230,15 @@ public class MainActivity extends AppCompatActivity {
                     Image img = new Image();
                     img.id = CAPTURED_FACE;
                     img.tag = ".jpg";
+                    img.imageType = eInputFaceType.ift_Live;
                     img.setImage(capturedFace.image());
                     request.images.add(img);
 
                     Image port = new Image();
                     port.id = DOCUMENT_FACE;
                     port.tag = ".jpg";
-                    port.setImage(rfidPortrait);
+                    port.imageType = eInputFaceType.ift_DocumentPrinted;
+                    port.setImage(portrait);
                     request.images.add(port);
 
                     FaceReaderService.Instance().matchFaces(request, new MatchFaceCallback() {
