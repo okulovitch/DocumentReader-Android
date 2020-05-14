@@ -20,6 +20,7 @@ import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletio
 import com.regula.documentreader.api.enums.*
 import com.regula.documentreader.api.results.DocumentReaderResults
 import com.regula.facesdk.FaceReaderService
+import com.regula.facesdk.enums.eInputFaceType
 import com.regula.facesdk.structs.Image
 import com.regula.facesdk.structs.MatchFacesRequest
 import java.io.FileNotFoundException
@@ -222,7 +223,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    private fun matchFace(results: DocumentReaderResults, rfidPortrait: Bitmap) {
+    private fun matchFace(results: DocumentReaderResults, portrait: Bitmap) {
         FaceReaderService.Instance().getFaceFromCamera(
             this@MainActivity
         ) { action, capturedFace, s ->
@@ -232,12 +233,15 @@ class MainActivity : AppCompatActivity() {
                 val img = Image()
                 img.id = CAPTURED_FACE
                 img.tag = ".jpg"
+                img.imageType = eInputFaceType.ift_Live
                 img.setImage(capturedFace.image())
                 request.images.add(img)
+
                 val port = Image()
                 port.id = DOCUMENT_FACE
                 port.tag = ".jpg"
-                port.setImage(rfidPortrait)
+                port.imageType = eInputFaceType.ift_DocumentPrinted
+                port.setImage(portrait)
                 request.images.add(port)
                 FaceReaderService.Instance().matchFaces(
                     request
