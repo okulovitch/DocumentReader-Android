@@ -21,6 +21,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import com.regula.documentreader.api.DocumentReader
+import com.regula.documentreader.api.completions.IDocumentReaderCompletion
+import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion
 import com.regula.documentreader.api.enums.*
 import com.regula.documentreader.api.results.DocumentReaderResults
 import kotlinx.android.synthetic.main.activity_main.*
@@ -54,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
     //DocumentReader processing callback
     private val completion =
-        DocumentReader.DocumentReaderCompletion { action, results, error ->
+        IDocumentReaderCompletion { action, results, error ->
             //processing is finished, all results are ready
             if (action == DocReaderAction.COMPLETE) {
                 if (loadingDialog != null && loadingDialog!!.isShowing) {
@@ -79,11 +81,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     //starting chip reading
-                    DocumentReader.Instance().startRFIDReader { rfidAction, results_RFIDReader, _ ->
+                    DocumentReader.Instance().startRFIDReader(this@MainActivity,  { rfidAction, results_RFIDReader, _ ->
                         if (rfidAction == DocReaderAction.COMPLETE || rfidAction == DocReaderAction.CANCEL) {
                             displayResults(results_RFIDReader)
                         }
-                    }
+                    });
                 } else {
                     displayResults(results)
                 }
@@ -137,7 +139,7 @@ class MainActivity : AppCompatActivity() {
                 DocumentReader.Instance().prepareDatabase(
                     this@MainActivity,
                     "FullAuth",
-                    object : DocumentReader.DocumentReaderPrepareCompletion {
+                    object : IDocumentReaderPrepareCompletion {
                         override fun onPrepareProgressChanged(progress: Int) {
                             initDialog.setTitle("Downloading database: $progress%")
                         }
@@ -152,7 +154,8 @@ class MainActivity : AppCompatActivity() {
                                     initDialog.dismiss()
                                 }
 
-                                DocumentReader.Instance().customization().isShowHelpAnimation = false
+                                DocumentReader.Instance().customization().edit()
+                                    .setShowHelpAnimation(false).apply();
 
                                 //initialization successful
                                 if (success) {
@@ -160,7 +163,7 @@ class MainActivity : AppCompatActivity() {
                                         clearResults()
 
                                         //starting video processing
-                                        DocumentReader.Instance().showScanner(completion)
+                                        DocumentReader.Instance().showScanner(this@MainActivity, completion)
                                     }
 
                                     recognizeImage!!.setOnClickListener {
@@ -183,14 +186,14 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
 
-                                    DocumentReader.Instance().functionality().setBtDeviceName("Regula 0000") // set up name of the 1120 device
+                                    DocumentReader.Instance().functionality().edit().setBtDeviceName("Regula 0000").apply() // set up name of the 1120 device
 
-                                    if (DocumentReader.Instance().getCanUseAuthenticator()) {
+                                    if (DocumentReader.Instance().isAuthenticatorAvailableForUse) {
                                         useAuthenticator = sharedPreferences!!.getBoolean(USE_AUTHENTICATOR, false)
                                         authenticatorCb!!.setChecked(useAuthenticator)
-                                        DocumentReader.Instance().functionality().isUseAuthenticator = useAuthenticator
+                                        DocumentReader.Instance().functionality().edit().setUseAuthenticator(useAuthenticator).apply();
                                         authenticatorCb!!.setOnCheckedChangeListener { _, checked ->
-                                            DocumentReader.Instance().functionality().isUseAuthenticator = checked
+                                            DocumentReader.Instance().functionality().edit().setUseAuthenticator(checked).apply();
                                             useAuthenticator = checked
                                             sharedPreferences!!.edit().putBoolean(USE_AUTHENTICATOR, useAuthenticator).apply()
                                         }
@@ -198,7 +201,7 @@ class MainActivity : AppCompatActivity() {
                                         authenticatorCb!!.visibility = View.GONE
                                     }
 
-                                    if (DocumentReader.Instance().canRFID) {
+                                    if (DocumentReader.Instance().isRFIDAvailableForUse) {
                                         //reading shared preferences
                                         doRfid = sharedPreferences!!.getBoolean(DO_RFID, false)
                                         doRfidCb!!.isChecked = doRfid
@@ -289,7 +292,7 @@ class MainActivity : AppCompatActivity() {
 
                     loadingDialog = showDialog("Processing image")
 
-                    DocumentReader.Instance().recognizeImage(bmp, completion)
+                    bmp?.let { DocumentReader.Instance().recognizeImage(it, completion) }
                 }
             }
         }
@@ -328,8 +331,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             // through all text fields
-            if (results.textResult != null && results.textResult.fields != null) {
-                for (textField in results.textResult.fields) {
+            if (results.textResult != null && results.textResult!!.fields != null) {
+                for (textField in results.textResult!!.fields) {
                     val value = results.getTextFieldValueByType(textField.fieldType, textField.lcid)
                     Log.d("MainActivity", value + "\n")
                 }
@@ -349,14 +352,14 @@ class MainActivity : AppCompatActivity() {
 
             if (results.authenticityResult != null) {
                 authenticityLayout!!.visibility = View.VISIBLE
-                if (results.authenticityResult.status == eCheckResult.CH_CHECK_OK) {
+                if (results.authenticityResult!!.status == eCheckResult.CH_CHECK_OK) {
                     authenticityResultImg!!.setImageResource(R.drawable.correct)
                 } else {
                     authenticityResultImg!!.setImageResource(R.drawable.incorrect)
                 }
 
-                for (check in results.authenticityResult.checks) {
-                    Log.d("MainActivity", "check type: " + check.typeName + ", status: " + check.status)
+                for (check in results.authenticityResult!!.checks) {
+                    Log.d("MainActivity", "check type: " + check.getTypeName(this@MainActivity) + ", status: " + check.status)
                     for (element in check.elements) {
                         Log.d("MainActivity", "Element type: " + element.elementType + ", status: " + element.status);
                     }

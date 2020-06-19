@@ -23,6 +23,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.regula.documentreader.api.DocumentReader;
+import com.regula.documentreader.api.completions.IDocumentReaderCompletion;
+import com.regula.documentreader.api.completions.IDocumentReaderInitCompletion;
+import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion;
 import com.regula.documentreader.api.results.DocumentReaderScenario;
 
 import java.io.InputStream;
@@ -55,11 +58,11 @@ public class FragmentMain extends Fragment {
 
     private Activity activity;
 
-    private DocumentReader.DocumentReaderCompletion completion;
+    private IDocumentReaderCompletion completion;
 
     private static FragmentMain instance;
 
-    static FragmentMain getInstance(DocumentReader.DocumentReaderCompletion completion){
+    static FragmentMain getInstance(IDocumentReaderCompletion completion){
         if(instance==null){
             instance = new FragmentMain();
         }
@@ -111,10 +114,10 @@ public class FragmentMain extends Fragment {
         }
     }
 
-    void prepareDatabase(Context context, final DocumentReader.DocumentReaderPrepareCompletion completion){
+    void prepareDatabase(Context context, final IDocumentReaderPrepareCompletion completion){
         //preparing database files, it will be downloaded from network only one time and stored on user device
         DocumentReader.Instance().prepareDatabase(context, "FullAuth", new
-                DocumentReader.DocumentReaderPrepareCompletion() {
+                IDocumentReaderPrepareCompletion() {
 
                     @Override
                     public void onPrepareProgressChanged(int i) {
@@ -129,7 +132,7 @@ public class FragmentMain extends Fragment {
     }
 
     void init(final Context context,
-                 final DocumentReader.DocumentReaderInitCompletion initCompletion){
+                 final IDocumentReaderInitCompletion initCompletion){
         try {
             InputStream licInput = getResources().openRawResource(R.raw.regula);
             int available = licInput.available();
@@ -138,12 +141,15 @@ public class FragmentMain extends Fragment {
             licInput.read(license);
 
             //Initializing the reader
-            DocumentReader.Instance().initializeReader(context, license, new DocumentReader.DocumentReaderInitCompletion() {
+            DocumentReader.Instance().initializeReader(context, license, new IDocumentReaderInitCompletion() {
                 @Override
                 public void onInitCompleted(boolean success, String error) {
-                    DocumentReader.Instance().customization().setShowResultStatusMessages(true);
-                    DocumentReader.Instance().customization().setShowStatusMessages(true);
-                    DocumentReader.Instance().functionality().setVideoCaptureMotionControl(true);
+                    DocumentReader.Instance().customization().edit()
+                            .setShowResultStatusMessages(true)
+                            .setShowStatusMessages(true).apply();
+
+                    DocumentReader.Instance().functionality().edit()
+                            .setVideoCaptureMotionControl(true).apply();
 
                     //initialization successful
                     if (success) {
@@ -165,7 +171,7 @@ public class FragmentMain extends Fragment {
             @Override
             public void onClick(View view) {
                 //starting video processing
-                DocumentReader.Instance().showScanner(completion);
+                DocumentReader.Instance().showScanner(getContext(), completion);
             }
         });
 
@@ -187,16 +193,16 @@ public class FragmentMain extends Fragment {
             }
         });
 
-        DocumentReader.Instance().functionality().setBtDeviceName("Regula 0000"); // set up name of the 1120 device
+        DocumentReader.Instance().functionality().edit().setBtDeviceName("Regula 0000").apply(); // set up name of the 1120 device
 
-        if (DocumentReader.Instance().getCanUseAuthenticator()) {
+        if (DocumentReader.Instance().isAuthenticatorAvailableForUse()) {
             useAuthenticator = sharedPreferences.getBoolean(USE_AUTHENTICATOR, false);
             authenticatorCb.setChecked(useAuthenticator);
-            DocumentReader.Instance().functionality().setUseAuthenticator(useAuthenticator);
+            DocumentReader.Instance().functionality().edit().setUseAuthenticator(useAuthenticator).apply();
             authenticatorCb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    DocumentReader.Instance().functionality().setUseAuthenticator(isChecked);
+                    DocumentReader.Instance().functionality().edit().setUseAuthenticator(isChecked).apply();
                     useAuthenticator = isChecked;
                     sharedPreferences.edit().putBoolean(USE_AUTHENTICATOR, useAuthenticator).apply();
                 }
@@ -205,7 +211,7 @@ public class FragmentMain extends Fragment {
             authenticatorCb.setVisibility(View.GONE);
         }
 
-        if (DocumentReader.Instance().getCanRFID()) {
+        if (DocumentReader.Instance().isRFIDAvailableForUse()) {
             //reading shared preferences
             doRfid = sharedPreferences.getBoolean(DO_RFID, false);
             doRfidCb.setChecked(doRfid);

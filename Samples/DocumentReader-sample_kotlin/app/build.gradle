@@ -8,6 +8,9 @@ android {
     allprojects{
         repositories{
             maven {
+                url "http://maven.regulaforensics.com/RegulaDocumentReader"
+            }
+            maven {
                 url "http://maven.regulaforensics.com/RegulaDocumentReader/Beta"
             }
         }
@@ -39,9 +42,10 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    implementation 'com.regula.documentreader.fullauthrfid:core:5.0.1503@aar'
-    implementation('com.regula.documentreader:api:5.0.953@aar') {
+    implementation 'com.regula.documentreader.fullauthrfid:core:5.1.3064@aar'
+    implementation('com.regula.documentreader:api:5.1.2465@aar')
+    implementation('com.regula.documentreader:facesdk:5.1.221@aar'){
         transitive = true;
     }
-    implementation 'com.regula.documentreader:btdevice:5.0.60@aar'
+    implementation 'com.regula.documentreader:btdevice:5.1.108@aar'
 }
