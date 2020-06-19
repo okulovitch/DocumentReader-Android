@@ -139,7 +139,8 @@ public class FragmentMain extends Fragment {
                     DocumentReader.Instance().customization().edit()
                             .setShowResultStatusMessages(true)
                             .setShowStatusMessages(true);
-                    DocumentReader.Instance().functionality().setVideoCaptureMotionControl(true);
+                    DocumentReader.Instance().functionality().edit()
+                            .setVideoCaptureMotionControl(true).apply();
 
                     //initialization successful
                     if (success) {
@@ -183,7 +184,7 @@ public class FragmentMain extends Fragment {
             }
         });
 
-        if (DocumentReader.Instance().getCanRFID()) {
+        if (DocumentReader.Instance().isRFIDAvailableForUse()) {
             //reading shared preferences
             doRfid = sharedPreferences.getBoolean(DO_RFID, false);
             doRfidCb.setChecked(doRfid);

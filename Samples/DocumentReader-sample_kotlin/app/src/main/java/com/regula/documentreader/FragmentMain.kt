@@ -106,7 +106,8 @@ class FragmentMain : Fragment() {
                     DocumentReader.Instance().customization().edit()
                         .setShowResultStatusMessages(true)
                         .setShowStatusMessages(true)
-                    DocumentReader.Instance().functionality().isVideoCaptureMotionControl = true
+                    DocumentReader.Instance().functionality().edit()
+                        .setVideoCaptureMotionControl(true).apply();
 
                     //initialization successful
                     if (success) {
@@ -142,7 +143,7 @@ class FragmentMain : Fragment() {
                 createImageBrowsingRequest()
             }
         }
-        if (DocumentReader.Instance().canRFID) {
+        if (DocumentReader.Instance().isRFIDAvailableForUse) {
             //reading shared preferences
             doRfid = sharedPreferences?.getBoolean(MainActivity.DO_RFID, false) ?: false
             doRfidCb!!.isChecked = doRfid
