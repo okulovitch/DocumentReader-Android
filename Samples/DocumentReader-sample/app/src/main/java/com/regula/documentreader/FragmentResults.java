@@ -151,11 +151,25 @@ public class FragmentResults extends Fragment {
                     for (DocumentReaderAuthenticityElement element : check.elements) {
                         Log.d("MainActivity", "Element type: " + element.elementType + ", status: " + element.status);
 
-                        if (check.type == eRPRM_Authenticity.IMAGE_PATTERN) {
+                        if (check.type == eRPRM_Authenticity.IMAGE_PATTERN || check.type == eRPRM_Authenticity.PORTRAIT_COMPARISON) {
                             DocumentReaderIdentResult identResult = (DocumentReaderIdentResult) element;
                             Bitmap etalonImage = identResult.etalonImage.getBitmap();
                             Bitmap image = identResult.image.getBitmap();
                             // TOOD:
+                        }
+                    }
+                }
+
+                for (DocumentReaderAuthenticityCheck check : results.authenticityResult.checks) {
+                    Log.d("FragmentResults", "check type: " + check.getTypeName(getContext()) + ", status: " + (check.getStatus() == eCheckResult.CH_CHECK_OK ? "Ok" : "Error"));
+                    for (DocumentReaderAuthenticityElement element : check.elements) {
+                        Log.d("FragmentResults", "Element type: " + element.elementType + ", status: " + (element.status == eCheckResult.CH_CHECK_OK ? "Ok" : "Error"));
+                        if (check.type == eRPRM_Authenticity.IMAGE_PATTERN) {
+                            DocumentReaderIdentResult identResult = (DocumentReaderIdentResult) element;
+                            Bitmap etalonImage = identResult.etalonImage.getBitmap(); // etalon bitmap (pattern)
+                            Bitmap image = identResult.image.getBitmap();  // image bitmap for compare (current image)
+                            int percentage = identResult.percentValue; // percent value of comparison
+                            Log.d("FragmentResults", "Percentage: " + percentage);
                         }
                     }
                 }
