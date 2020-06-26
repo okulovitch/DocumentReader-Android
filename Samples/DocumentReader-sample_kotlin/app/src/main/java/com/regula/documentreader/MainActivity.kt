@@ -25,6 +25,7 @@ import com.regula.documentreader.api.completions.IDocumentReaderCompletion
 import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion
 import com.regula.documentreader.api.enums.*
 import com.regula.documentreader.api.results.DocumentReaderResults
+import com.regula.documentreader.api.results.authenticity.DocumentReaderIdentResult
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.FileNotFoundException
 import java.io.InputStream
@@ -362,6 +363,13 @@ class MainActivity : AppCompatActivity() {
                     Log.d("MainActivity", "check type: " + check.getTypeName(this@MainActivity) + ", status: " + check.status)
                     for (element in check.elements) {
                         Log.d("MainActivity", "Element type: " + element.elementType + ", status: " + element.status);
+                        if (check.type == eRPRM_Authenticity.IMAGE_PATTERN || check.type == eRPRM_Authenticity.PORTRAIT_COMPARISON) {
+                            val identResult = element as DocumentReaderIdentResult
+                            val etalonImage = identResult.etalonImage?.bitmap
+                            val image = identResult.image?.bitmap
+                            val percentage = identResult.percentValue;
+                            Log.d("FragmentResults", "Percentage: $percentage")
+                        }
                     }
                 }
             } else {
