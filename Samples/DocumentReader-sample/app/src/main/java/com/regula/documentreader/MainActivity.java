@@ -83,10 +83,10 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onPrepareCompleted(boolean b, String s) {
+                public void onPrepareCompleted(boolean b, Throwable s) {
                     mainFragment.init(MainActivity.this, new IDocumentReaderInitCompletion() {
                         @Override
-                        public void onInitCompleted(boolean b, String s) {
+                        public void onInitCompleted(boolean b, Throwable s) {
                             if (initDialog.isShowing()) {
                                 initDialog.dismiss();
                             }
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
     //DocumentReader processing callback
     private IDocumentReaderCompletion completion = new IDocumentReaderCompletion() {
         @Override
-        public void onCompleted(int action, final DocumentReaderResults results, String error) {
+        public void onCompleted(int action, final DocumentReaderResults results, Throwable error) {
             //processing is finished, all results are ready
             if (action == DocReaderAction.COMPLETE) {
                 if(loadingDialog!=null && loadingDialog.isShowing()){
@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
                     //starting chip reading
                     DocumentReader.Instance().startRFIDReader(MainActivity.this, new IDocumentReaderCompletion() {
                         @Override
-                        public void onCompleted(int rfidAction, final DocumentReaderResults results, String error) {
+                        public void onCompleted(int rfidAction, final DocumentReaderResults results, Throwable error) {
                             if (rfidAction == DocReaderAction.COMPLETE) {
                                 final Bitmap rfidPortrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT,
                                         eRPRM_ResultType.RFID_RESULT_TYPE_RFID_IMAGE_DATA);
@@ -220,6 +220,8 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private void matchFace(final DocumentReaderResults results, final Bitmap portrait) {
+        FaceReaderService.Instance().setServiceUrl("https://faceapi.regulaforensics.com");
+
         FaceReaderService.Instance().getFaceFromCamera(MainActivity.this, new FaceCaptureCallback() {
             @Override
             public void onFaceCaptured(int action, final Image capturedFace, String s) {

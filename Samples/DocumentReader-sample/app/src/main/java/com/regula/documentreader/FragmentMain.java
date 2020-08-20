@@ -117,7 +117,7 @@ public class FragmentMain extends Fragment {
                     }
 
                     @Override
-                    public void onPrepareCompleted(boolean b, String s) {
+                    public void onPrepareCompleted(boolean b, Throwable s) {
                         completion.onPrepareCompleted(b, s);
                     }
                 });
@@ -135,7 +135,7 @@ public class FragmentMain extends Fragment {
             //Initializing the reader
             DocumentReader.Instance().initializeReader(context, license, new IDocumentReaderInitCompletion() {
                 @Override
-                public void onInitCompleted(boolean success, String error) {
+                public void onInitCompleted(boolean success, Throwable error) {
                     DocumentReader.Instance().customization().edit()
                             .setShowResultStatusMessages(true)
                             .setShowStatusMessages(true);
