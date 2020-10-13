@@ -56,7 +56,6 @@ public class CustomRegActivity extends AppCompatActivity implements CameraCallba
 
     @Override
     public void onFrame(byte[] bytes) {
-
     }
 
     @Override
