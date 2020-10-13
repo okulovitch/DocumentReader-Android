@@ -29,6 +29,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.regula.common.CameraPermissionsActivity;
+import com.regula.documentreader.api.CaptureActivity2;
 import com.regula.documentreader.api.DocumentReader;
 import com.regula.documentreader.api.completions.IDocumentReaderCompletion;
 import com.regula.documentreader.api.completions.IDocumentReaderInitCompletion;
@@ -47,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static android.graphics.BitmapFactory.decodeStream;
+import static com.regula.common.enums.CommonKeys.CAMERA_ID;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -235,6 +238,13 @@ public class MainActivity extends AppCompatActivity {
             loadingDialog.dismiss();
             loadingDialog = null;
         }
+    }
+
+    public void onCustomRegClicked(View view) {
+        Intent cameraPreviewIntent = new Intent(MainActivity.this, CameraPermissionsActivity.class);
+        cameraPreviewIntent.putExtra(CAMERA_ID, 0);
+        cameraPreviewIntent.putExtra(CameraPermissionsActivity.CAMERA_ACTIVITY_TYPE, CustomRegActivity.class);
+        startActivity(cameraPreviewIntent);
     }
 
     @Override
