@@ -8,7 +8,7 @@ android {
                 url "http://maven.regulaforensics.com/RegulaDocumentReader"
             }
             maven {
-                url "http://ftp.regula.local/RegulaDocumentReaderGit"
+                url "http://maven.regulaforensics.com/RegulaDocumentReaderBeta"
             }
         }
     }

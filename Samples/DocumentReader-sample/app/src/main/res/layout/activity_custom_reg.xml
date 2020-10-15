@@ -32,7 +32,7 @@
             android:background="@android:color/transparent"
             android:textColor="@android:color/white"
             android:padding="@dimen/reg_small_img_button_padding"
-            android:text="Skip Verification"
+            android:text="Custom test"
             android:layout_alignParentEnd="true"
             android:onClick="onClickClosed"/>
 
@@ -54,45 +54,15 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_margin="2dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@android:color/white"
                     android:textStyle="bold"
-                    android:text="Identity Documents" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    android:text="1 Insurance Card" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    android:text="2 Front" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    android:textStyle="bold"
-                    android:text="Personal Details" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    android:text="5 General Data" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    android:text="6 Phone Number" />
+                    android:text="Custom close text" />
 
             </LinearLayout>
 
@@ -111,7 +81,6 @@
                 android:id="@+id/cameraUi" />
 
         </RelativeLayout>
-
 
     </LinearLayout>
 
