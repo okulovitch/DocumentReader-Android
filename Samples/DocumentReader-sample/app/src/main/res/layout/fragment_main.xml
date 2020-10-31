@@ -37,6 +37,16 @@
             android:layout_margin="4dp"
             android:clickable="true"/>
 
+        <TextView
+            android:id="@+id/startLivenessLink"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@android:color/holo_blue_dark"
+            android:text="Start liveness"
+            android:layout_margin="4dp"
+            android:clickable="true"/>
+
         <CheckBox
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -26,9 +27,12 @@ import com.regula.documentreader.api.enums.eRPRM_ResultType;
 import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 import com.regula.facesdk.FaceReaderService;
+import com.regula.facesdk.enums.LivenessStatus;
 import com.regula.facesdk.enums.eInputFaceType;
+import com.regula.facesdk.results.LivenessResponse;
 import com.regula.facesdk.results.MatchFacesResponse;
 import com.regula.facesdk.results.infrastructure.FaceCaptureCallback;
+import com.regula.facesdk.results.infrastructure.LivenessCallback;
 import com.regula.facesdk.results.infrastructure.MatchFaceCallback;
 import com.regula.facesdk.structs.Image;
 import com.regula.facesdk.structs.MatchFacesRequest;
@@ -48,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
     static final int CAPTURED_FACE = 1;
     static final int DOCUMENT_FACE = 2;
+    static final int LIVENESS_FACE = 3;
 
     static SharedPreferences sharedPreferences;
 
@@ -250,6 +255,59 @@ public class MainActivity extends AppCompatActivity {
                             fragmentManager.beginTransaction()
                                     .replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx")
                                     .commitAllowingStateLoss();
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    public void startLivenessWithMatch() {
+        FaceReaderService.Instance().setServiceUrl("https://faceapi.regulaforensics.com");
+
+        FaceReaderService.Instance().getFaceFromCamera(MainActivity.this, new FaceCaptureCallback() {
+            @Override
+            public void onFaceCaptured(int action, final Image capturedFace, String s) {
+                if (capturedFace != null) {
+                    final MatchFacesRequest request = new MatchFacesRequest();
+                    request.similarityThreshold = 0;
+
+                    Image img = new Image();
+                    img.id = CAPTURED_FACE;
+                    img.tag = ".jpg";
+                    img.imageType = eInputFaceType.ift_Live;
+                    img.setImage(capturedFace.image());
+                    request.images.add(img);
+
+                    FaceReaderService.Instance().startLivenessMatching(MainActivity.this, new LivenessCallback() {
+                        @Override
+                        public void onLivenessCompete(@NonNull LivenessResponse livenessResponse) {
+                            if (livenessResponse.error != null) {
+                                Log.d("Liveness", "Error: " + livenessResponse.error.getMessage());
+                                return;
+                            }
+
+                            if (livenessResponse.imageData == null)
+                                return;
+
+                            Log.d("Liveness", "liveness status: " + livenessResponse.liveness);
+
+                            Image liveness = new Image();
+                            liveness.id = LIVENESS_FACE;
+                            liveness.tag = ".jpg";
+                            liveness.imageType = eInputFaceType.ift_Live;
+                            liveness.setImage(livenessResponse.getBitmap());
+                            request.images.add(liveness);
+
+                            FaceReaderService.Instance().matchFaces(request, new MatchFaceCallback() {
+                                @Override
+                                public void onFaceMatched(int i, MatchFacesResponse matchFacesResponse, String s) {
+                                    resultsFragment = FragmentResults.getInstance(null, request, matchFacesResponse);
+                                    fragmentManager.beginTransaction()
+                                            .replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx")
+                                            .commitAllowingStateLoss();
+                                }
+                            });
                         }
                     });
                 }

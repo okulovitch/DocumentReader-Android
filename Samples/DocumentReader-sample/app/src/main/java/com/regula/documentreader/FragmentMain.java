@@ -27,6 +27,7 @@ import com.regula.documentreader.api.completions.IDocumentReaderCompletion;
 import com.regula.documentreader.api.completions.IDocumentReaderInitCompletion;
 import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion;
 import com.regula.documentreader.api.results.DocumentReaderScenario;
+import com.regula.facesdk.FaceReaderService;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class FragmentMain extends Fragment {
 
     private TextView showScanner;
     private TextView recognizeImage;
+    private TextView startLivenessLink;
 
     private CheckBox doRfidCb;
 
@@ -95,6 +97,8 @@ public class FragmentMain extends Fragment {
         scenarioLv = view.findViewById(R.id.scenariosList);
 
         doRfidCb = view.findViewById(R.id.doRfidCb);
+
+        startLivenessLink = view.findViewById(R.id.startLivenessLink);
     }
 
     @Override
@@ -232,6 +236,13 @@ public class FragmentMain extends Fragment {
                 selectedPosition = i;
                 adapter.notifyDataSetChanged();
 
+            }
+        });
+
+        startLivenessLink.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ((MainActivity) getActivity()).startLivenessWithMatch();
             }
         });
     }

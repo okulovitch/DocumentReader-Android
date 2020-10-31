@@ -88,7 +88,7 @@ public class FragmentResults extends Fragment {
     private void displayResults(DocumentReaderResults results){
         clearResults();
 
-        if(results!=null) {
+        if(results != null) {
             String name = results.getTextFieldValueByType(eVisualFieldType.FT_SURNAME_AND_GIVEN_NAMES);
             if (name != null){
                 nameTv.setText(name);
@@ -102,22 +102,6 @@ public class FragmentResults extends Fragment {
                 }
             }
 
-            if(response!=null && response.matchedFaces!=null && response.matchedFaces.size()>0){
-                MatchedFacesPair pair = response.matchedFaces.get(0);
-                comparisonTv.setText("Value: " + (int)(pair.similarity * 100) + "%" );
-
-                for(Image img : request.images){
-                    if(img.id == MainActivity.CAPTURED_FACE){
-                        realIv.setImageBitmap(img.image());
-                    } else if(img.id == MainActivity.DOCUMENT_FACE){
-                        etalonIv.setImageBitmap(img.image());
-                    }
-                }
-
-            } else {
-                authResults.setVisibility(View.INVISIBLE);
-            }
-
             Bitmap portrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT);
             if(portrait!=null){
                 portraitIv.setImageBitmap(portrait);
@@ -129,6 +113,22 @@ public class FragmentResults extends Fragment {
                 documentImage = Bitmap.createScaledBitmap(documentImage, (int)(480 * aspectRatio), 480, false);
                 docImageIv.setImageBitmap(documentImage);
             }
+        }
+
+        if(response != null && response.matchedFaces != null && response.matchedFaces.size() > 0){
+            MatchedFacesPair pair = response.matchedFaces.get(0);
+            comparisonTv.setText("Value: " + (int)(pair.similarity * 100) + "%" );
+
+            for(Image img : request.images){
+                if(img.id == MainActivity.CAPTURED_FACE){
+                    realIv.setImageBitmap(img.image());
+                } else if(img.id == MainActivity.LIVENESS_FACE){
+                    etalonIv.setImageBitmap(img.image());
+                }
+            }
+
+        } else {
+            authResults.setVisibility(View.INVISIBLE);
         }
     }
 }
