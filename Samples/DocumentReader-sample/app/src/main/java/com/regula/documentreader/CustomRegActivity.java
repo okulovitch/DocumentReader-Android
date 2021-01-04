@@ -155,7 +155,7 @@ public class CustomRegActivity extends CaptureActivity2 implements CameraCallbac
                         synchronized (lock) {
                             isPauseRecognize = true;
                         }
-                        if (documentReaderResults.morePagesAvailable == 1) { //more pages are available for this document
+                        if (documentReaderResults != null && documentReaderResults.morePagesAvailable == 1) { //more pages are available for this document
                             Toast.makeText(CustomRegActivity.this, "Page ready, flip", Toast.LENGTH_LONG).show();
 
                             //letting API know, that all frames will be from different page of the same document, merge same field types
@@ -175,7 +175,7 @@ public class CustomRegActivity extends CaptureActivity2 implements CameraCallbac
                             });
                             builder.setTitle("Processing finished");
                             //getting text field value from results
-                            builder.setMessage(documentReaderResults.getTextFieldValueByType(eVisualFieldType.FT_SURNAME_AND_GIVEN_NAMES));
+                            builder.setMessage(documentReaderResults == null ? "Empty results" : documentReaderResults.getTextFieldValueByType(eVisualFieldType.FT_SURNAME_AND_GIVEN_NAMES));
                             builder.show();
                         }
                         break;
