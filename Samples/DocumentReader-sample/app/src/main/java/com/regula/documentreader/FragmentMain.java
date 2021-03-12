@@ -23,15 +23,20 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.regula.documentreader.api.DocumentReader;
+import com.regula.documentreader.api.ble.RegulaBleService;
 import com.regula.documentreader.api.completions.IDocumentReaderCompletion;
 import com.regula.documentreader.api.completions.IDocumentReaderInitCompletion;
 import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion;
+import com.regula.documentreader.api.errors.DocumentReaderException;
 import com.regula.documentreader.api.results.DocumentReaderScenario;
+import com.regula.documentreader.api.utils.BluetoothPermissionHelper;
+import com.regula.documentreader.api.utils.PermissionsHelper;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.app.Activity.RESULT_OK;
 import static com.regula.documentreader.MainActivity.COMPARE_FACES;
 import static com.regula.documentreader.MainActivity.DO_RFID;
 import static com.regula.documentreader.MainActivity.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE;
@@ -114,6 +119,36 @@ public class FragmentMain extends Fragment {
         }
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == BluetoothUtil.REQUEST_ENABLE_LOCATION) {
+            resultCode = BluetoothPermissionHelper.isLocationServiceEnabled(getActivity()) ? RESULT_OK : requestCode;
+        }
+
+        if(requestCode == BluetoothUtil.REQUEST_ENABLE_BT || requestCode == BluetoothUtil.REQUEST_ENABLE_LOCATION) {
+            if (resultCode == RESULT_OK) {
+                if (BluetoothUtil.isPermissionsGranted(getActivity()))
+                    onBlePermissionGranted();
+            }
+            else
+                authenticatorCb.setChecked(false);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PermissionsHelper.BLE_ACCESS_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                onBlePermissionGranted();
+            } else {
+                authenticatorCb.setChecked(false);
+                PermissionsHelper.setShouldShowStatus(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+        }
+    }
+
     void prepareDatabase(Context context, final IDocumentReaderPrepareCompletion completion){
         //preparing database files, it will be downloaded from network only one time and stored on user device
         DocumentReader.Instance().prepareDatabase(context, "FullAuth", new
@@ -125,7 +160,7 @@ public class FragmentMain extends Fragment {
                     }
 
                     @Override
-                    public void onPrepareCompleted(boolean b, Throwable s) {
+                    public void onPrepareCompleted(boolean b, DocumentReaderException s) {
                         completion.onPrepareCompleted(b, s);
                     }
                 });
@@ -143,7 +178,7 @@ public class FragmentMain extends Fragment {
             //Initializing the reader
             DocumentReader.Instance().initializeReader(context, license, new IDocumentReaderInitCompletion() {
                 @Override
-                public void onInitCompleted(boolean success, Throwable error) {
+                public void onInitCompleted(boolean success, DocumentReaderException error) {
                     DocumentReader.Instance().customization().edit()
                             .setShowResultStatusMessages(true)
                             .setShowStatusMessages(true).apply();
@@ -193,11 +228,11 @@ public class FragmentMain extends Fragment {
             }
         });
 
-        DocumentReader.Instance().functionality().edit().setBtDeviceName("Regula 0000").apply(); // set up name of the 1120 device
+        DocumentReader.Instance().functionality().edit().setBtDeviceName("Regula 0122").apply(); // set up name of the 1120 device
 
         if (DocumentReader.Instance().isAuthenticatorAvailableForUse()) {
             useAuthenticator = sharedPreferences.getBoolean(USE_AUTHENTICATOR, false);
-            authenticatorCb.setChecked(useAuthenticator);
+
             DocumentReader.Instance().functionality().edit().setUseAuthenticator(useAuthenticator).apply();
             authenticatorCb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
@@ -205,8 +240,17 @@ public class FragmentMain extends Fragment {
                     DocumentReader.Instance().functionality().edit().setUseAuthenticator(isChecked).apply();
                     useAuthenticator = isChecked;
                     sharedPreferences.edit().putBoolean(USE_AUTHENTICATOR, useAuthenticator).apply();
+
+                    if (useAuthenticator) {
+                        if (BluetoothUtil.isPermissionsGranted(getActivity()))
+                            onBlePermissionGranted();
+                    } else {
+                        Intent bleIntent = new Intent(getContext(), RegulaBleService.class);
+                        getActivity().stopService(bleIntent);
+                    }
                 }
             });
+            authenticatorCb.setChecked(useAuthenticator);
         } else {
             authenticatorCb.setVisibility(View.GONE);
         }
@@ -305,5 +349,10 @@ public class FragmentMain extends Fragment {
 
     public boolean isCompareFaces() {
         return compareFaces;
+    }
+
+    private void onBlePermissionGranted() {
+        Intent bleIntent = new Intent(getContext(), RegulaBleService.class);
+        getActivity().startService(bleIntent);
     }
 }

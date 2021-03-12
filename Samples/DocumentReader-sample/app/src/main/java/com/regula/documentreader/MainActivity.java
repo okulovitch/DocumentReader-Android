@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -24,9 +25,12 @@ import com.regula.documentreader.api.enums.eGraphicFieldType;
 import com.regula.documentreader.api.enums.eRFID_Password_Type;
 import com.regula.documentreader.api.enums.eRPRM_ResultType;
 import com.regula.documentreader.api.enums.eVisualFieldType;
+import com.regula.documentreader.api.errors.DocumentReaderException;
 import com.regula.documentreader.api.results.DocumentReaderResults;
-import com.regula.facesdk.FaceReaderService;
+import com.regula.facesdk.Face;
+import com.regula.facesdk.enums.FaceCaptureResultCodes;
 import com.regula.facesdk.enums.eInputFaceType;
+import com.regula.facesdk.results.FaceCaptureResponse;
 import com.regula.facesdk.results.MatchFacesResponse;
 import com.regula.facesdk.results.infrastructure.FaceCaptureCallback;
 import com.regula.facesdk.results.infrastructure.MatchFaceCallback;
@@ -35,6 +39,7 @@ import com.regula.facesdk.structs.MatchFacesRequest;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.List;
 
 import static android.graphics.BitmapFactory.decodeStream;
 
@@ -47,9 +52,6 @@ public class MainActivity extends AppCompatActivity {
     static final String USE_AUTHENTICATOR = "useAuthenticator";
     static final String COMPARE_FACES = "compareFaces";
     static final String RESULTS_TAG = "resultsFragment";
-
-    static final int CAPTURED_FACE = 1;
-    static final int DOCUMENT_FACE = 2;
 
     static SharedPreferences sharedPreferences;
 
@@ -87,10 +89,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onPrepareCompleted(boolean b, Throwable s) {
+            public void onPrepareCompleted(boolean b, DocumentReaderException s) {
                 mainFragment.init(MainActivity.this, new IDocumentReaderInitCompletion() {
                     @Override
-                    public void onInitCompleted(boolean b, Throwable s) {
+                    public void onInitCompleted(boolean b, DocumentReaderException s) {
                         if (initDialog.isShowing()) {
                             initDialog.dismiss();
                         }
@@ -128,6 +130,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        List<Fragment> fragments = getSupportFragmentManager().getFragments();
+        if (fragments != null && fragments.size() > 0)
+            fragments.get(0).onActivityResult(requestCode, resultCode, data);
+
         if (resultCode == RESULT_OK) {
             //Image browsing intent processed successfully
             if (requestCode == REQUEST_BROWSE_PICTURE){
@@ -146,6 +152,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        List<Fragment> fragments = getSupportFragmentManager().getFragments();
+        if (fragments != null && fragments.size() > 0)
+            fragments.get(0).onRequestPermissionsResult(requestCode, permissions, grantResults);
+
         switch (requestCode) {
             case PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {
                 // If request is cancelled, the result arrays are empty.
@@ -163,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
     //DocumentReader processing callback
     private IDocumentReaderCompletion completion = new IDocumentReaderCompletion() {
         @Override
-        public void onCompleted(int action, final DocumentReaderResults results, Throwable error) {
+        public void onCompleted(int action, final DocumentReaderResults results, DocumentReaderException error) {
             //processing is finished, all results are ready
             if (action == DocReaderAction.COMPLETE) {
                 if(loadingDialog!=null && loadingDialog.isShowing()){
@@ -187,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
                     //starting chip reading
                     DocumentReader.Instance().startRFIDReader(MainActivity.this, new IDocumentReaderCompletion() {
                         @Override
-                        public void onCompleted(int rfidAction, final DocumentReaderResults results, Throwable error) {
+                        public void onCompleted(int rfidAction, final DocumentReaderResults results, DocumentReaderException error) {
                             if (results == null)
                                 return;
 
@@ -227,48 +237,49 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private void matchFace(final DocumentReaderResults results, final Bitmap rfidPortrait, final int imgType) {
-        FaceReaderService.Instance().getFaceFromCamera(MainActivity.this, new FaceCaptureCallback() {
+        Face.Instance().presentFaceCaptureActivity(MainActivity.this, new FaceCaptureCallback() {
             @Override
-            public void onFaceCaptured(int action, final Image capturedFace, String s) {
-                if (capturedFace != null) {
-                    final MatchFacesRequest request = new MatchFacesRequest();
-                    request.similarityThreshold = 0;
+            public void onFaceCaptured(FaceCaptureResponse response) {
+                Bitmap bitmap = response.image != null ? response.image.getBitmap() : null;
 
-                    Image img = new Image();
-                    img.id = CAPTURED_FACE;
-                    img.tag = ".jpg";
-                    img.imageType = eInputFaceType.ift_Live;
-                    img.setImage(capturedFace.image());
-                    request.images.add(img);
-
-                    Image port = new Image();
-                    port.id = DOCUMENT_FACE;
-                    port.tag = ".jpg";
-                    port.setImage(rfidPortrait);
-                    port.imageType = imgType;
-                    request.images.add(port);
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            compareFacesDialog = showDialog("Compare faces...");
-                        }
-                    });
-                    FaceReaderService.Instance().matchFaces(request, new MatchFaceCallback() {
-                        @Override
-                        public void onFaceMatched(int i, MatchFacesResponse matchFacesResponse, String s) {
-                            compareFacesDialog.dismiss();
-                            compareFacesDialog = null;
-                            resultsFragment = FragmentResults.getInstance(results, request, matchFacesResponse);
-                            fragmentManager.beginTransaction()
-                                    .replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx")
-                                    .commitAllowingStateLoss();
-                        }
-                    });
-                } else {
+                if (response.error != null) {
                     resultsFragment = FragmentResults.getInstance(results);
                     fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
+                    return;
                 }
+
+                final MatchFacesRequest request = new MatchFacesRequest();
+                request.similarityThreshold = 0;
+
+                Image img = new Image();
+                img.tag = ".jpg";
+                img.imageType = eInputFaceType.ift_Live;
+                img.setImage(bitmap);
+                request.images.add(img);
+
+                Image port = new Image();
+                port.tag = ".jpg";
+                port.setImage(rfidPortrait);
+                port.imageType = imgType;
+                request.images.add(port);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        compareFacesDialog = showDialog("Compare faces...");
+                    }
+                });
+                Face.Instance().matchFaces(request, new MatchFaceCallback() {
+                    @Override
+                    public void onFaceMatched(MatchFacesResponse matchFacesResponse) {
+                        compareFacesDialog.dismiss();
+                        compareFacesDialog = null;
+                        resultsFragment = FragmentResults.getInstance(results, request, matchFacesResponse);
+                        fragmentManager.beginTransaction()
+                                .replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx")
+                                .commitAllowingStateLoss();
+                    }
+                });
             }
         });
     }

@@ -24,8 +24,9 @@ import com.regula.documentreader.api.results.DocumentReaderTextField;
 import com.regula.documentreader.api.results.authenticity.DocumentReaderAuthenticityCheck;
 import com.regula.documentreader.api.results.authenticity.DocumentReaderAuthenticityElement;
 import com.regula.documentreader.api.results.authenticity.DocumentReaderIdentResult;
+import com.regula.facesdk.enums.eInputFaceType;
+import com.regula.facesdk.results.ComparedFacesPair;
 import com.regula.facesdk.results.MatchFacesResponse;
-import com.regula.facesdk.results.MatchedFacesPair;
 import com.regula.facesdk.structs.Image;
 import com.regula.facesdk.structs.MatchFacesRequest;
 
@@ -125,14 +126,14 @@ public class FragmentResults extends Fragment {
 
             // face results
             if(response!=null && response.matchedFaces!=null && response.matchedFaces.size()>0){
-                MatchedFacesPair pair = response.matchedFaces.get(0);
+                ComparedFacesPair pair = response.matchedFaces.get(0);
                 comparisonTv.setText("Value: " + (int)(pair.similarity * 100) + "%" );
 
                 for(Image img : request.images){
-                    if(img.id == MainActivity.CAPTURED_FACE){
-                        realIv.setImageBitmap(img.image());
-                    } else if(img.id == MainActivity.DOCUMENT_FACE){
-                        etalonIv.setImageBitmap(img.image());
+                    if(img.imageType == eInputFaceType.ift_Live){
+                        realIv.setImageBitmap(img.getBitmap());
+                    } else if(img.imageType == eInputFaceType.ift_DocumentPrinted || img.imageType == eInputFaceType.ift_DocumentRFID){
+                        etalonIv.setImageBitmap(img.getBitmap());
                     }
                 }
 
