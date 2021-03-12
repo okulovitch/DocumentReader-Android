@@ -28,7 +28,6 @@ import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.errors.DocumentReaderException;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 import com.regula.facesdk.Face;
-import com.regula.facesdk.enums.FaceCaptureResultCodes;
 import com.regula.facesdk.enums.eInputFaceType;
 import com.regula.facesdk.results.FaceCaptureResponse;
 import com.regula.facesdk.results.MatchFacesResponse;
