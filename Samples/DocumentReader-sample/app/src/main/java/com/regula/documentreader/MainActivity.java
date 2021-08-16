@@ -30,10 +30,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.regula.documentreader.api.DocumentReader;
+import com.regula.documentreader.api.completions.IDocumentReaderCompletion;
+import com.regula.documentreader.api.completions.IDocumentReaderInitCompletion;
+import com.regula.documentreader.api.completions.IDocumentReaderPrepareCompletion;
 import com.regula.documentreader.api.enums.DocReaderAction;
 import com.regula.documentreader.api.enums.eGraphicFieldType;
 import com.regula.documentreader.api.enums.eRFID_Password_Type;
 import com.regula.documentreader.api.enums.eVisualFieldType;
+import com.regula.documentreader.api.errors.DocumentReaderException;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 import com.regula.documentreader.api.results.DocumentReaderScenario;
 import com.regula.documentreader.api.results.DocumentReaderTextField;
@@ -109,24 +113,24 @@ public class MainActivity extends AppCompatActivity {
 
                 //preparing database files, it will be downloaded from network only one time and stored on user device
                 DocumentReader.Instance().prepareDatabase(MainActivity.this, "Full", new
-                        DocumentReader.DocumentReaderPrepareCompletion() {
+                        IDocumentReaderPrepareCompletion() {
                             @Override
                             public void onPrepareProgressChanged(int progress) {
                                 initDialog.setTitle("Downloading database: " + progress + "%");
                             }
 
                             @Override
-                            public void onPrepareCompleted(boolean status, String error) {
+                            public void onPrepareCompleted(boolean status, DocumentReaderException error) {
 
                                 //Initializing the reader
-                                DocumentReader.Instance().initializeReader(MainActivity.this, license, new DocumentReader.DocumentReaderInitCompletion() {
+                                DocumentReader.Instance().initializeReader(MainActivity.this, license, new IDocumentReaderInitCompletion() {
                                     @Override
-                                    public void onInitCompleted(boolean success, String error) {
+                                    public void onInitCompleted(boolean success, DocumentReaderException error) {
                                         if (initDialog.isShowing()) {
                                             initDialog.dismiss();
                                         }
 
-                                        DocumentReader.Instance().customization().setShowHelpAnimation(false);
+                                        DocumentReader.Instance().customization().edit().setShowHelpAnimation(false).apply();
 
                                         //initialization successful
                                         if (success) {
@@ -136,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
                                                     clearResults();
 
                                                     //starting video processing
-                                                    DocumentReader.Instance().showScanner(completion);
+                                                    DocumentReader.Instance().showScanner(getApplicationContext(), completion);
                                                 }
                                             });
 
@@ -159,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             });
 
-                                            if (DocumentReader.Instance().getCanRFID()) {
+                                            if (DocumentReader.Instance().isRFIDAvailableForUse()) {
                                                 //reading shared preferences
                                                 doRfid = sharedPreferences.getBoolean(DO_RFID, false);
                                                 doRfidCb.setChecked(doRfid);
@@ -280,9 +284,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //DocumentReader processing callback
-    private DocumentReader.DocumentReaderCompletion completion = new DocumentReader.DocumentReaderCompletion() {
+    private IDocumentReaderCompletion completion = new IDocumentReaderCompletion() {
+
         @Override
-        public void onCompleted(int action, DocumentReaderResults results, String error) {
+        public void onCompleted(int action, DocumentReaderResults results, DocumentReaderException error) {
             //processing is finished, all results are ready
             if (action == DocReaderAction.COMPLETE) {
                 if(loadingDialog!=null && loadingDialog.isShowing()){

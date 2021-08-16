@@ -21,9 +21,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.regula.documentreader.api.DocumentReader;
+import com.regula.documentreader.api.completions.IDocumentReaderCompletion;
 import com.regula.documentreader.api.enums.DocReaderAction;
 import com.regula.documentreader.api.enums.eRFID_DataFile_Type;
 import com.regula.documentreader.api.enums.eRFID_NotificationAndErrorCodes;
+import com.regula.documentreader.api.errors.DocumentReaderException;
 import com.regula.documentreader.api.results.DocumentReaderResults;
 
 
@@ -191,9 +193,9 @@ public class CustomRfidActivity extends AppCompatActivity {
         Log.d(TAG, "Start read RFID");
         rfidStatus.setText(R.string.strReadingRFID);
         rfidStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
-        DocumentReader.Instance().readRFID(isoDepTag, new DocumentReader.DocumentReaderCompletion() {
+        DocumentReader.Instance().readRFID(isoDepTag, new IDocumentReaderCompletion() {
             @Override
-            public void onCompleted(int rfidAction, DocumentReaderResults documentReaderResults, String error) {
+            public void onCompleted(int rfidAction, DocumentReaderResults documentReaderResults, DocumentReaderException error) {
                 if(rfidAction == DocReaderAction.COMPLETE) {
                     // Completed rfid reading
                     MainActivity.documentReaderResults = documentReaderResults;
@@ -264,7 +266,7 @@ public class CustomRfidActivity extends AppCompatActivity {
     }
 
     public void skipReadRfid(View view) {
-        DocumentReader.Instance().stopRFIDReader();
+        DocumentReader.Instance().stopRFIDReader(getApplicationContext());
         setResult(RESULT_CANCELED);
         finish();
     }
