@@ -27,17 +27,18 @@ import com.regula.documentreader.api.enums.eRPRM_ResultType;
 import com.regula.documentreader.api.enums.eVisualFieldType;
 import com.regula.documentreader.api.errors.DocumentReaderException;
 import com.regula.documentreader.api.results.DocumentReaderResults;
-import com.regula.facesdk.Face;
-import com.regula.facesdk.enums.eInputFaceType;
-import com.regula.facesdk.results.FaceCaptureResponse;
-import com.regula.facesdk.results.MatchFacesResponse;
-import com.regula.facesdk.results.infrastructure.FaceCaptureCallback;
-import com.regula.facesdk.results.infrastructure.MatchFaceCallback;
-import com.regula.facesdk.structs.Image;
-import com.regula.facesdk.structs.MatchFacesRequest;
+import com.regula.facesdk.FaceSDK;
+import com.regula.facesdk.callback.FaceCaptureCallback;
+import com.regula.facesdk.callback.MatchFaceCallback;
+import com.regula.facesdk.enums.ImageType;
+import com.regula.facesdk.model.Image;
+import com.regula.facesdk.model.results.FaceCaptureResponse;
+import com.regula.facesdk.model.results.MatchFacesResponse;
+import com.regula.facesdk.request.MatchFacesRequest;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import static android.graphics.BitmapFactory.decodeStream;
@@ -204,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
                                 final Bitmap rfidPortrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT,
                                         eRPRM_ResultType.RFID_RESULT_TYPE_RFID_IMAGE_DATA);
                                 if( rfidPortrait!=null && mainFragment.isCompareFaces()) {
-                                    matchFace(results, rfidPortrait, eInputFaceType.ift_DocumentRFID);
+                                    matchFace(results, rfidPortrait, ImageType.IMAGE_TYPE_RFID);
                                 } else {
                                     resultsFragment = FragmentResults.getInstance(results);
                                     fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
@@ -215,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
                 } else if( results !=null) {
                     final Bitmap portrait = results.getGraphicFieldImageByType(eGraphicFieldType.GF_PORTRAIT);
                     if(portrait!=null && mainFragment.isCompareFaces()) {
-                        matchFace(results, portrait, eInputFaceType.ift_DocumentPrinted);
+                        matchFace(results, portrait, ImageType.IMAGE_TYPE_PRINTED);
                     } else {
                         resultsFragment = FragmentResults.getInstance(results);
                         fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
@@ -236,31 +237,21 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private void matchFace(final DocumentReaderResults results, final Bitmap rfidPortrait, final int imgType) {
-        Face.Instance().presentFaceCaptureActivity(MainActivity.this, new FaceCaptureCallback() {
+        FaceSDK.Instance().presentFaceCaptureActivity(MainActivity.this, new FaceCaptureCallback() {
             @Override
-            public void onFaceCaptured(FaceCaptureResponse response) {
-                Bitmap bitmap = response.image != null ? response.image.getBitmap() : null;
+            public void onFaceCaptured(@NonNull FaceCaptureResponse response) {
+                Bitmap bitmap = response.getImage() != null ? response.getImage().getBitmap() : null;
 
-                if (response.error != null) {
+                if (response.getException() != null) {
                     resultsFragment = FragmentResults.getInstance(results);
                     fragmentManager.beginTransaction().replace(R.id.mainFragment, resultsFragment).addToBackStack("xxx").commitAllowingStateLoss();
                     return;
                 }
 
-                final MatchFacesRequest request = new MatchFacesRequest();
-                request.similarityThreshold = 0;
-
-                Image img = new Image();
-                img.tag = ".jpg";
-                img.imageType = eInputFaceType.ift_Live;
-                img.setImage(bitmap);
-                request.images.add(img);
-
-                Image port = new Image();
-                port.tag = ".jpg";
-                port.setImage(rfidPortrait);
-                port.imageType = imgType;
-                request.images.add(port);
+                List<Image> images = new ArrayList<>();
+                images.add(new Image(ImageType.IMAGE_TYPE_LIVE, bitmap));
+                images.add(new Image(imgType, rfidPortrait));
+                final MatchFacesRequest request = new MatchFacesRequest(images,0);
 
                 runOnUiThread(new Runnable() {
                     @Override
@@ -268,9 +259,9 @@ public class MainActivity extends AppCompatActivity {
                         compareFacesDialog = showDialog("Compare faces...");
                     }
                 });
-                Face.Instance().matchFaces(request, new MatchFaceCallback() {
+                FaceSDK.Instance().matchFaces(request, new MatchFaceCallback() {
                     @Override
-                    public void onFaceMatched(MatchFacesResponse matchFacesResponse) {
+                    public void onFaceMatched(@NonNull MatchFacesResponse matchFacesResponse) {
                         compareFacesDialog.dismiss();
                         compareFacesDialog = null;
                         resultsFragment = FragmentResults.getInstance(results, request, matchFacesResponse);

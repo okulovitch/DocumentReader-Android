@@ -24,11 +24,11 @@ import com.regula.documentreader.api.results.DocumentReaderTextField;
 import com.regula.documentreader.api.results.authenticity.DocumentReaderAuthenticityCheck;
 import com.regula.documentreader.api.results.authenticity.DocumentReaderAuthenticityElement;
 import com.regula.documentreader.api.results.authenticity.DocumentReaderIdentResult;
-import com.regula.facesdk.enums.eInputFaceType;
-import com.regula.facesdk.results.ComparedFacesPair;
-import com.regula.facesdk.results.MatchFacesResponse;
-import com.regula.facesdk.structs.Image;
-import com.regula.facesdk.structs.MatchFacesRequest;
+import com.regula.facesdk.enums.ImageType;
+import com.regula.facesdk.model.Image;
+import com.regula.facesdk.model.results.ComparedFacesPair;
+import com.regula.facesdk.model.results.MatchFacesResponse;
+import com.regula.facesdk.request.MatchFacesRequest;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
@@ -125,14 +125,14 @@ public class FragmentResults extends Fragment {
             }
 
             // face results
-            if(response!=null && response.matchedFaces!=null && response.matchedFaces.size()>0){
-                ComparedFacesPair pair = response.matchedFaces.get(0);
-                comparisonTv.setText("Value: " + (int)(pair.similarity * 100) + "%" );
+            if(response!=null && response.getMatchedFaces().size() > 0){
+                ComparedFacesPair pair = response.getMatchedFaces().get(0);
+                comparisonTv.setText("Value: " + (int)(pair.getSimilarity() * 100) + "%" );
 
-                for(Image img : request.images){
-                    if(img.imageType == eInputFaceType.ift_Live){
+                for(Image img : request.getImages()){
+                    if(img.getImageType() == ImageType.IMAGE_TYPE_LIVE){
                         realIv.setImageBitmap(img.getBitmap());
-                    } else if(img.imageType == eInputFaceType.ift_DocumentPrinted || img.imageType == eInputFaceType.ift_DocumentRFID){
+                    } else if(img.getImageType() == ImageType.IMAGE_TYPE_PRINTED || img.getImageType() == ImageType.IMAGE_TYPE_RFID){
                         etalonIv.setImageBitmap(img.getBitmap());
                     }
                 }
