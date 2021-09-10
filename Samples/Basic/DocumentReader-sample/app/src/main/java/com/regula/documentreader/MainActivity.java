@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -42,9 +43,11 @@ import com.regula.documentreader.api.results.DocumentReaderScenario;
 import com.regula.documentreader.api.results.DocumentReaderTextField;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import static android.graphics.BitmapFactory.decodeStream;
 
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView nameTv;
     private TextView showScanner;
     private TextView recognizeImage;
+    private TextView recognizePdfLink;
 
     private ImageView portraitIv;
     private ImageView docImageIv;
@@ -80,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
         nameTv = findViewById(R.id.nameTv);
         showScanner = findViewById(R.id.showScannerLink);
         recognizeImage = findViewById(R.id.recognizeImageLink);
+        recognizePdfLink = findViewById(R.id.recognizePdfLink);
 
         portraitIv = findViewById(R.id.portraitIv);
         docImageIv = findViewById(R.id.documentImageIv);
@@ -157,6 +162,8 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             });
 
+                                            recognizePdfLink.setOnClickListener(v -> recognizePdf());
+
                                             if (DocumentReader.Instance().isRFIDAvailableForUse()) {
                                                 //reading shared preferences
                                                 doRfid = sharedPreferences.getBoolean(DO_RFID, false);
@@ -225,6 +232,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void recognizePdf() {
+        loadingDialog = showDialog("Processing pdf");
+        Executors.newSingleThreadExecutor().execute(() -> {
+            InputStream is;
+            byte[] buffer = null;
+            try {
+                is = getAssets().open("Regula/doc.pdf");
+                int size = is.available();
+                buffer = new byte[size];
+                is.read(buffer);
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            byte[] finalBuffer = buffer;
+            runOnUiThread(() -> DocumentReader.Instance().recognizeImage(finalBuffer, completion));
+        });
+    }
 
 
     @Override

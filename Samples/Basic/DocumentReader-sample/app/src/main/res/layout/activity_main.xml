@@ -88,6 +88,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:text="Use recognize pdf"
+            android:textColor="@android:color/holo_blue_dark"
+            android:id="@+id/recognizePdfLink"
+            android:layout_margin="4dp"
+            android:clickable="true"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             android:text="Use recognizeImage() method"
             android:textColor="@android:color/holo_blue_dark"
             android:id="@+id/recognizeImageLink"
