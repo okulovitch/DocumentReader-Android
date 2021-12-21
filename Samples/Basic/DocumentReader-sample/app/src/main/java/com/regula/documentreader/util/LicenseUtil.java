@@ -1,8 +1,10 @@
-package com.regula.documentreader;
+package com.regula.documentreader.util;
 
 import android.app.Activity;
 
 import androidx.annotation.NonNull;
+
+import com.regula.documentreader.R;
 
 import java.io.InputStream;
 
@@ -11,7 +13,7 @@ import java.io.InputStream;
  * Copyright (c) 2021 Regula. All rights reserved.
  */
 
-class LicenseUtil {
+public class LicenseUtil {
 
     /**
      * Reading the license from raw resource file

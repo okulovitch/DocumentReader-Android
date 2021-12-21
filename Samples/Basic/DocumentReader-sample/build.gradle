@@ -16,6 +16,9 @@ allprojects {
         google()
         mavenCentral()
         maven {
+            url "https://maven.regulaforensics.com/RegulaDocumentReader/Beta"
+        }
+        maven {
             url "https://maven.regulaforensics.com/RegulaDocumentReader"
         }
     }
