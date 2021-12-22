@@ -11,8 +11,8 @@
         android:id="@+id/btn_default"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Initialization by key file"
         android:layout_marginBottom="20dp"
+        android:text="Initialization by key file"
         app:layout_constraintBottom_toTopOf="@+id/btn_7310"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -24,6 +24,6 @@
         android:text="Initialization by bluetooth device"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="40dp"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
