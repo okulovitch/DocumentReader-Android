@@ -140,7 +140,7 @@ public abstract class BaseActivity extends AppCompatActivity implements MainFrag
             showDialog("Initializing");
 
             //preparing database files, it will be downloaded from network only one time and stored on user device
-            DocumentReader.Instance().prepareDatabase(BaseActivity.this, "Full", new IDocumentReaderPrepareCompletion() {
+            DocumentReader.Instance().prepareDatabase(BaseActivity.this, "FullAuth", new IDocumentReaderPrepareCompletion() {
                 @Override
                 public void onPrepareProgressChanged(int progress) {
                     setTitleDialog("Downloading database: " + progress + "%");
@@ -203,7 +203,10 @@ public abstract class BaseActivity extends AppCompatActivity implements MainFrag
     }
 
     private void setupFunctionality() {
-        DocumentReader.Instance().functionality().edit().setShowCameraSwitchButton(true).apply();
+        DocumentReader.Instance().functionality().edit()
+                .setUseAuthenticator(true)
+                .setShowCameraSwitchButton(true)
+                .apply();
     }
 
     private final IDocumentReaderCompletion completion = new IDocumentReaderCompletion() {
