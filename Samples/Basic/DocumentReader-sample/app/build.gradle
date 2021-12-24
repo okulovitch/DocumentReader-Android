@@ -30,7 +30,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
     implementation 'com.regula.btdevice:api:5.4.331@aar'
-    implementation 'com.regula.documentreader.core:fullauthrfid:6.1.6188@aar'
+    implementation 'com.regula.documentreader.core:fullauthrfid:6.1.6232@aar'
     implementation('com.regula.documentreader:api:6.1.6425@aar') {
         transitive = true;
     }
